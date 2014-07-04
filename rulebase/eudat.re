@@ -19,6 +19,8 @@
 # logDebug(*msg)
 # logError(*msg)
 # logWithLevel(*level, *msg)
+# EUDATReplaceSlash(*path)
+# EUDATGetZoneNameFromPath(*path,*out)
 # EUDATiCHECKSUMretrieve(*path, *checksum)
 # EUDATiCHECKSUMget(*path, *checksum)
 # EUDATgetObjectTimeDiff(*filePath, *mode, *age)
@@ -58,11 +60,14 @@
 #   *response       [OUT]   True or False depending on authorization rights
 #
 # Author: Claudio Cacciari, Cineca
+# Modified by Long Phan, JSC
 #
 EUDATAuthZ(*user, *action, *target, *response) {
     getAuthZParameters(*authZMapPath);
+    getEpicApiParameters(*credStoreType, *credStorePath, *epicApi, *serverID, *epicDebug);
+
     logDebug("checking authorization for *user to perform: *action *target");
-    msiExecCmd("authZ.manager.py", "*authZMapPath check *user '*action' '*target'",
+    msiExecCmd("authZ.manager.py", "*authZMapPath check *user '*action' '*target' '*credStorePath'",
                "null", "null", "null", *out);
     msiGetStdoutInExecCmdOut(*out, *response);
     if (*response == "False") {
@@ -228,7 +233,55 @@ logError(*msg) {
 }
 
 logWithLevel(*level, *msg) {
-    msiWriteToLog(*level,"*msg");
+#    msiWriteToLog(*level,"*msg");
+	on (*level == "info")  { writeLine("serverLog","INFO: *msg");}
+ 	on (*level == "debug") { writeLine("serverLog","DEBUG: *msg");}
+	on (*level == "error") { writeLine("serverLog","ERROR: *msg");}
+}
+
+#
+# Function: replace microservice msiReplaceSlash (eudat.c)
+#
+# Author: Long Phan, JSC
+#
+EUDATReplaceSlash(*path) {
+	# --------------------- replaceSlash from Microservice
+	#writeLine("stdout","In = *path");	
+	msiReplaceSlash(*path, *out);
+	#writeLine("stdout","Out = *out");
+	
+	# --------------------- new iRODS-Code to replace Microservice 
+	*list = split("*path","/");
+	*n = "";
+	foreach (*t in *list) {		
+		*n = *n ++ *t ++ "_";		
+	}
+	msiStrchop(*n,*n_chop);
+	
+	# --------------------- Test again
+	#writeLine("stdout","Out2 = *n_chop");
+}
+
+#
+# Function: replace microservice msiGetZoneNameFromPath (eudat.c)
+#
+# Author: Long Phan, JSC
+#
+EUDATGetZoneNameFromPath(*path,*out) {
+	writeLine("stdout","In = *path");
+
+	# ----------------------- Test getZoneNameFromPath from Microservice
+	msiGetZoneNameFromPath(*path, *out);
+	writeLine("stdout","out = *out");
+	
+	# ----------------------- New iRODS-Code to replace Microservice 
+	*list = split("*path","/");
+	*n = elem(*list,0);	
+	*out = "/"++"*n";
+	
+	# ----------------------- Test again	
+	#writeLine("stdout","out2 = *out");
+
 }
 
 #
