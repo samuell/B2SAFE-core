@@ -244,10 +244,10 @@ logWithLevel(*level, *msg) {
 #
 # Author: Long Phan, JSC
 #
-EUDATReplaceSlash(*path) {
+EUDATReplaceSlash(*path, *out) {
 	# --------------------- replaceSlash from Microservice
 	#writeLine("stdout","In = *path");	
-	msiReplaceSlash(*path, *out);
+	#msiReplaceSlash(*path, *out);
 	#writeLine("stdout","Out = *out");
 	
 	# --------------------- new iRODS-Code to replace Microservice 
@@ -257,6 +257,7 @@ EUDATReplaceSlash(*path) {
 		*n = *n ++ *t ++ "_";		
 	}
 	msiStrchop(*n,*n_chop);
+	*out = *n_chop;
 	
 	# --------------------- Test again
 	#writeLine("stdout","Out2 = *n_chop");
@@ -268,11 +269,11 @@ EUDATReplaceSlash(*path) {
 # Author: Long Phan, JSC
 #
 EUDATGetZoneNameFromPath(*path,*out) {
-	writeLine("stdout","In = *path");
+	#writeLine("stdout","In = *path");
 
 	# ----------------------- Test getZoneNameFromPath from Microservice
-	msiGetZoneNameFromPath(*path, *out);
-	writeLine("stdout","out = *out");
+	#msiGetZoneNameFromPath(*path, *out);
+	#writeLine("stdout","out = *out");
 	
 	# ----------------------- New iRODS-Code to replace Microservice 
 	*list = split("*path","/");
@@ -280,7 +281,7 @@ EUDATGetZoneNameFromPath(*path,*out) {
 	*out = "/"++"*n";
 	
 	# ----------------------- Test again	
-	#writeLine("stdout","out2 = *out");
+	#writeLine("stdout","out = *out");
 
 }
 
