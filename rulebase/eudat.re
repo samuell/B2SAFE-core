@@ -19,7 +19,7 @@
 # logDebug(*msg)
 # logError(*msg)
 # logWithLevel(*level, *msg)
-# EUDATReplaceSlash(*path)
+# EUDATReplaceSlash(*path, *out)
 # EUDATGetZoneNameFromPath(*path,*out)
 # EUDATiCHECKSUMretrieve(*path, *checksum)
 # EUDATiCHECKSUMget(*path, *checksum)
