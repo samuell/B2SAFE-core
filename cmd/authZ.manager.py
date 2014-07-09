@@ -64,7 +64,7 @@ class AuthZClient(object):
             print "authZ assertions from %s" % (self.mapfile)
 
 
-    def checkauth(self, username, action, target, credential):
+    def checkAuth(self, username, action, target, credential):
         """1. check the authorization (credential) of user, action = read for credential """
         i = 0
         for assertion in self.map:
@@ -130,7 +130,7 @@ def check(args):
     authZclient = AuthZClient(args.mapfilepath, args.debug)
     authZclient.parse()
 
-    result = authZclient.checkauth(args.username,args.action,args.target, args.credential)
+    result = authZclient.checkAuth(args.username,args.action,args.target, args.credential)
     #	result = authZclient.checkRequest(args.username, args.action, args.target)
     sys.stdout.write(str(result))
 
