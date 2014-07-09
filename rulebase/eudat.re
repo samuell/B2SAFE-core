@@ -598,7 +598,8 @@ processPIDCommandFile(*cmdPath) {
             EUDATCreatePID(*parent, *destination, *ror, bool("true"), *new_pid);
             getSharedCollection(*destination,*collectionPath);
             #create .pid.update file based on absolute file path
-            
+ 	    EUDATReplaceSlash(*destination, *filepathslash);
+	    #msiReplaceSlash(*destination,*filepathslash); 	           
             triggerUpdateParentPID("*collectionPath*filepathslash.pid.update", *parent, *new_pid);
         } 
         else if(*pidAction=="update") {
