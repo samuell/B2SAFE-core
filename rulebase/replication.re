@@ -59,16 +59,18 @@ EUDATCheckError(*path_of_transfered_file,*target_of_transfered_file) {
     
     *status_transfer_success = bool("true");
     *cause = "";
-    msiIsData(*target_of_transfered_file, *result, *status);
-    if (int(*result) == 0) {
-        *cause = "missing replicated object";
-        *status_transfer_success = bool("false");
-    } else if (EUDATCatchErrorChecksum(*path_of_transfered_file,*target_of_transfered_file) == bool("false")) {
+    #msiIsData(*target_of_transfered_file, *result, *status);    
+    #*result = EUDATVerifyExistence(*path_of_transfered_file);	    
+    #if (*result == bool("false")) {
+    #    *cause = "missing replicated object";
+    #    *status_transfer_success = bool("false");
+    #} else 
+    if (EUDATCatchErrorChecksum(*path_of_transfered_file,*target_of_transfered_file) == bool("false")) {
         *cause = "different checksum";
         *status_transfer_success = bool("false");
     } else if (EUDATCatchErrorSize(*path_of_transfered_file,*target_of_transfered_file) == bool("false")) {
         *cause = "different size";
-    *status_transfer_success = bool("false");
+    	*status_transfer_success = bool("false");
     } 
     if (*status_transfer_success == bool("false")) {
         logInfo("replication from *path_of_transfered_file to *target_of_transfered_file failed: *cause");
@@ -107,30 +109,29 @@ EUDATTransferSingleFile(*path_of_transfered_file,*target_of_transfered_file) {
         logDebug("PID exist, Replication's beginning ...... ");
         getSharedCollection(*path_of_transfered_file,*sharedCollection);
         msiSplitPath(*path_of_transfered_file, *collection, *file);
-        msiReplaceSlash(*target_of_transfered_file, *controlfilename);
+	#msiReplaceSlash(*target_of_transfered_file, *controlfilename);
+        EUDATReplaceSlash(*target_of_transfered_file, *controlfilename);
         logDebug("ReplicateFile: *sharedCollection*controlfilename");            
             
         # Catch Error CAT_NO_ACCESS_PERMISSION before replication
         EUDATCatchErrorDataOwner(*path_of_transfered_file,*status_identity);
             
         if (*status_identity == bool("true")) {
-            *err = errorcode(triggerReplication("*sharedCollection*controlfilename.replicate",*pid,
-                                                 *path_of_transfered_file,*target_of_transfered_file));
-            if (*err < 0) {
-                logDebug("triggerReplication failed with error code *err");
-                *status_transfer_success = bool("false");
-                EUDATUpdateLogging(*status_transfer_success,*path_of_transfered_file,
-                              *target_of_transfered_file,"iRODS errorcode=*err");
-            } else {
+            #*err = errorcode(triggerReplication("*sharedCollection*controlfilename.replicate",*pid,*path_of_transfered_file,*target_of_transfered_file));
+            #if (*err < 0) {
+            #    logDebug("triggerReplication failed with error code *err");
+            #    *status_transfer_success = bool("false");         
+	    #	 EUDATUpdateLogging(*status_transfer_success,*path_of_transfered_file,*target_of_transfered_file,"iRODS errorcode=*err");
+            #} else {
+		triggerReplication("*sharedCollection*controlfilename.replicate",*pid,*path_of_transfered_file,*target_of_transfered_file);
                 logDebug("Perform the last checksum and checksize of transfered data object");        
                 EUDATCheckError(*path_of_transfered_file,*target_of_transfered_file);
-            }
+            #}
         } else {
             logDebug("Action is canceled. Error is caught in function EUDATCatchErrorDataOwner"); 
             # Update fail_log                
             *status_transfer_success = bool("false");
-            EUDATUpdateLogging(*status_transfer_success,*path_of_transfered_file,*target_of_transfered_file,
-                               "no access permission");
+            EUDATUpdateLogging(*status_transfer_success,*path_of_transfered_file,*target_of_transfered_file,"no access permission");
         }            
     }        
 }
@@ -201,7 +202,8 @@ EUDATCheckReplicas(*source, *destination) {
         EUDATiRORupdate(*source, *pid);
         logInfo("replication from *source to *destination");
         getSharedCollection(*source,*collectionPath);
-        msiReplaceSlash(*destination,*filepathslash);
+	#msiReplaceSlash(*destination,*filepathslash);
+        EUDATReplaceSlash(*destination,*filepathslash);
         triggerReplication("*collectionPath*filepathslash.replicate",*pid,*source,*destination);
     }
 }
@@ -301,6 +303,7 @@ EUDATTransferCollection(*path_of_transfered_coll,*target_of_transfered_coll,*inc
 # Show status of Collection (Size, count of data objects, collection owner, location, date) and save it  
 # This function is optional and run independently to support observing status of replication
 # Result will be saved into a file in iRODS *logStatisticFilePath
+# TODO Need more tests
 # 
 # TODO additional feature: only data objects of User on Session ($userNameClient 
 #      and $rodsZoneClient) at *path_of_collection will be recorded in case collection 
@@ -313,75 +316,75 @@ EUDATTransferCollection(*path_of_transfered_coll,*target_of_transfered_coll,*inc
 #
 # Author: Long Phan, Juelich
 #
-#EUDATGetStatCollection(*path_of_collection, *logStatisticFilePath) {
-#
-#		# --- create optional content of logfile for collection ---
-#		*contents = "------------- Log Information of Collection *path_of_collection --------------- \n";
-#		msiGetCollectionACL(*path_of_collection,"",*Buf);		
-#		*contents = *contents ++ "Collection Owner: \n*Buf \n";
-#		
-#		msiExecStrCondQuery("SELECT RESC_LOC, RESC_NAME WHERE COLL_NAME = '*path_of_collection'" ,*BS);
-#		foreach   ( *BS )    {
-#	        msiGetValByKey(*BS,"RESC_LOC", *resc_loc);
-#	        msiGetValByKey(*BS,"RESC_NAME", *resc_name);
-#	    }
-#		*contents = *contents ++ "Resource Name: *resc_name\nResource Location: *resc_loc \n";
-#		
-#		msiGetSystemTime(*time,"human");		
-#		*contents = *contents ++ "Date.Time: *time \n\n";
-#				
-#		msiSplitPath(*logStatisticFilePath, *coll, *name);
-#						
-#		# --- record *contents of collection and all sub_collection from *path_of_collection ---
-#			*wildcard = "%";
-#			
-#			# loop on collection
-#			*ContInxOld = 1;
-#			# Path:
-#			*COLLPATH = "*path_of_collection"++"*wildcard";
-#			*Condition = "COLL_NAME like '*COLLPATH'";
-#				
-#			*sum = 0;
-#			*count = 0;
-#			msiStrlen(*path_of_collection,*originallength);
-#			*comparelink = *path_of_collection ++ "/";
-#			msiStrlen(*comparelink,*pathlength);
-#			
-#			msiMakeGenQuery("COLL_NAME,count(DATA_NAME), sum(DATA_SIZE)",*Condition, *GenQInp);
-#			msiExecGenQuery(*GenQInp, *GenQOut);
-#			msiGetContInxFromGenQueryOut(*GenQOut,*ContInxNew);
-#			
-#			while(*ContInxOld > 0) {
-#				foreach(*GenQOut) {			
-#					msiGetValByKey(*GenQOut, "COLL_NAME", *collname);			
-#					msiGetValByKey(*GenQOut, "DATA_NAME", *dc);
-#					msiGetValByKey(*GenQOut, "DATA_SIZE", *ds);
-#										
-#					msiStrlen(*collname,*lengthtemp);
-#					# msiSubString of *collname and compare with *path_of_collection	
-#					msiSubstr(*collname,"0","*pathlength",*subcollname);
-#					
-#					if (*subcollname == *comparelink || *originallength == *lengthtemp) {
-#						*contents = "*contents" ++ "*collname count = *dc, sum = *ds\n";
-#						*count = *count + double(*dc);
-#						*sum = *sum + double(*ds);
-#					}		
-#					
-#				}
-#				
-#				*ContInxOld = *ContInxNew;
-#				# get more rows in case data > 256 rows.
-#				if (*ContInxOld > 0) {msiGetMoreRows(*GenQInp,*GenQOut,*ContInxNew);}
-#			}
-#				
-#		#writeLine("stdout","In *logStatisticFilePath \n--Number of files: *count\n"++"Capacity:*sum \n");
-#				
-#		*contents = *contents ++ "\nIn *logStatisticFilePath \n--Number of files: *count\n"++"-- Capacity: *sum \n";
-# #-----------------------------------------------------------------------------------------------											
-#		if (*logStatisticFilePath == "") {
-#			writeLine("stdout","*contents");
-#		} else {
-#			writeFile(*logStatisticFilePath, *contents);
-#		}
-#								
-#}
+EUDATGetStatCollection(*path_of_collection, *logStatisticFilePath) {
+
+		# --- create optional content of logfile for collection ---
+		*contents = "------------- Log Information of Collection *path_of_collection --------------- \n";
+		msiGetCollectionACL(*path_of_collection,"",*Buf);		
+		*contents = *contents ++ "Collection Owner: \n*Buf \n";
+		
+		msiExecStrCondQuery("SELECT RESC_LOC, RESC_NAME WHERE COLL_NAME = '*path_of_collection'" ,*BS);
+		foreach   ( *BS )    {
+	        msiGetValByKey(*BS,"RESC_LOC", *resc_loc);
+	        msiGetValByKey(*BS,"RESC_NAME", *resc_name);
+	    }
+		*contents = *contents ++ "Resource Name: *resc_name\nResource Location: *resc_loc \n";
+		
+		msiGetSystemTime(*time,"human");		
+		*contents = *contents ++ "Date.Time: *time \n\n";
+				
+		msiSplitPath(*logStatisticFilePath, *coll, *name);
+						
+		# --- record *contents of collection and all sub_collection from *path_of_collection ---
+			*wildcard = "%";
+			
+			# loop on collection
+			*ContInxOld = 1;
+			# Path:
+			*COLLPATH = "*path_of_collection"++"*wildcard";
+			*Condition = "COLL_NAME like '*COLLPATH'";
+				
+			*sum = 0;
+			*count = 0;
+			msiStrlen(*path_of_collection,*originallength);
+			*comparelink = *path_of_collection ++ "/";
+			msiStrlen(*comparelink,*pathlength);
+			
+			msiMakeGenQuery("COLL_NAME,count(DATA_NAME), sum(DATA_SIZE)",*Condition, *GenQInp);
+			msiExecGenQuery(*GenQInp, *GenQOut);
+			msiGetContInxFromGenQueryOut(*GenQOut,*ContInxNew);
+			
+			while(*ContInxOld > 0) {
+				foreach(*GenQOut) {			
+					msiGetValByKey(*GenQOut, "COLL_NAME", *collname);			
+					msiGetValByKey(*GenQOut, "DATA_NAME", *dc);
+					msiGetValByKey(*GenQOut, "DATA_SIZE", *ds);
+										
+					msiStrlen(*collname,*lengthtemp);
+					# msiSubString of *collname and compare with *path_of_collection	
+					msiSubstr(*collname,"0","*pathlength",*subcollname);
+					
+					if (*subcollname == *comparelink || *originallength == *lengthtemp) {
+						*contents = "*contents" ++ "*collname count = *dc, sum = *ds\n";
+						*count = *count + double(*dc);
+						*sum = *sum + double(*ds);
+					}		
+					
+				}
+				
+				*ContInxOld = *ContInxNew;
+				# get more rows in case data > 256 rows.
+				if (*ContInxOld > 0) {msiGetMoreRows(*GenQInp,*GenQOut,*ContInxNew);}
+			}
+				
+		#writeLine("stdout","In *logStatisticFilePath \n--Number of files: *count\n"++"Capacity:*sum \n");
+				
+		*contents = *contents ++ "\nIn *logStatisticFilePath \n--Number of files: *count\n"++"-- Capacity: *sum \n";
+ #-----------------------------------------------------------------------------------------------											
+		if (*logStatisticFilePath == "") {
+			writeLine("stdout","*contents");
+		} else {
+			writeFile(*logStatisticFilePath, *contents);
+		}
+								
+}

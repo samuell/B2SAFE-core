@@ -46,6 +46,47 @@ EUDATIntegrityCheck(*srcColl,*destColl) {
 
 
 #
+# Verify the format of path data
+# 
+# Parameter:
+# 	*path	[IN]	Path of Data in iRODS
+#
+# Author: Long Phan, Jülich
+#
+EUDATVerifyData(*path) {
+    logInfo("Verify that source input path *path is a Data")
+    msiIsData(*path,*result, *Status);
+    if(int(*result) == 0) {
+        logError("Input path *path is not a Data");
+        fail;
+    }
+}
+
+
+#
+# Verify the existence of data
+#
+# Parameter:
+#       *path   [IN]    Path of Data Object in iRODS
+#
+# Author: Long Phan, Jülich
+#
+EUDATVerifyExistence(*path) {
+    *b = bool("true");
+    logInfo("Verify that source data *path exists");
+    if (errorcode(msiDataObjChksum(*path,"forceChksum=",*chkSum)) >= 0) {
+    #if (errorcode(msiObjStat(*path,*out)) >= 0) {
+        writeLine("stdout","Data Exist");
+    } else {
+        writeLine("stdout","Not Exist");
+        *b = bool("false");
+    }
+    *b;
+}
+
+
+
+#
 # Verify the format of collection
 # 
 # Parameter:
@@ -61,6 +102,7 @@ EUDATVerifyCollection(*srcColl) {
         fail;
     }
 }
+
 
 
 #

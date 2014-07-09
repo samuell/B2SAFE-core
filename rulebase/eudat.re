@@ -106,8 +106,7 @@ EUDATAuthZ(*user, *action, *target, *response) {
 EUDATLog(*message, *level) {
     getLogParameters(*logConfPath);
     logInfo("logging message '*message'");
-    msiExecCmd("log.manager.py", "*logConfPath log *level *message",
-               "null", "null", "null", *out);
+    msiExecCmd("log.manager.py", "*logConfPath log *level *message","null", "null", "null", *out);
 }
 
 #
@@ -158,7 +157,8 @@ EUDATQueue(*action, *message, *number) {
 # Author: Willem Elbers, MPI-TLA
 #
 getSharedCollection(*zonePath, *collectionPath) {
-    msiGetZoneNameFromPath(*zonePath, *zoneName);
+    #msiGetZoneNameFromPath(*zonePath, *zoneName);
+    EUDATGetZoneNameFromPath(*zonePath, *zoneName);
     *collectionPath = "*zoneName/replicate/";
 }
 
@@ -225,7 +225,7 @@ logDebug(*msg) {
 #    logWithLevel("debug", *msg);
 # replaced "debug" with "info" to print even without
 # changing the log level of iRODS
-     logWithLevel("info", *msg);
+     logWithLevel("debug", *msg);
 }
 
 logError(*msg) {
@@ -269,11 +269,11 @@ EUDATReplaceSlash(*path, *out) {
 # Author: Long Phan, JSC
 #
 EUDATGetZoneNameFromPath(*path,*out) {
-	#writeLine("stdout","In = *path");
+	# writeLine("stdout","In = *path");
 
 	# ----------------------- Test getZoneNameFromPath from Microservice
-	#msiGetZoneNameFromPath(*path, *out);
-	#writeLine("stdout","out = *out");
+	#msiGetZoneNameFromPath(*path, *out2);
+	#writeLine("stdout","out = *out2");
 	
 	# ----------------------- New iRODS-Code to replace Microservice 
 	*list = split("*path","/");
@@ -281,7 +281,7 @@ EUDATGetZoneNameFromPath(*path,*out) {
 	*out = "/"++"*n";
 	
 	# ----------------------- Test again	
-	#writeLine("stdout","out = *out");
+	# writeLine("stdout","out = *out");
 
 }
 
@@ -598,7 +598,7 @@ processPIDCommandFile(*cmdPath) {
             EUDATCreatePID(*parent, *destination, *ror, bool("true"), *new_pid);
             getSharedCollection(*destination,*collectionPath);
             #create .pid.update file based on absolute file path
-            msiReplaceSlash(*destination,*filepathslash); 
+            
             triggerUpdateParentPID("*collectionPath*filepathslash.pid.update", *parent, *new_pid);
         } 
         else if(*pidAction=="update") {
@@ -641,7 +641,8 @@ doReplication(*pid, *source, *destination, *ror, *status) {
         #trigger pid management in destination
         getSharedCollection(*destination,*collectionPath);
         # create .pid.create file and monitor for .pid.update based on absolute file path
-        msiReplaceSlash(*destination,*filepathslash);
+        EUDATReplaceSlash(*destination,*filepathslash);
+	#msiReplaceSlash(*destination,*filepathslash);
         triggerCreatePID("*collectionPath*filepathslash.pid.create", *pid, *destination, *ror);
         updateMonitor("*collectionPath*filepathslash.pid.update");
     }
