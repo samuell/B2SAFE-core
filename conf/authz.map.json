@@ -1,10 +1,18 @@
 {
 "assertion 1":
-	{ "subject":
-		[ "*" ],
-	  "action":
-		[ "*" ],
-	  "target":
-		[ "*" ]
-	}
+        { "subject":
+                [ "rods#tempZone" ],
+          "action":
+                [ "read" ],
+          "target":
+                [ "../conf/credentials_example" ]
+        },
+"assertion 2":
+        { "subject":
+                [ "rods#tempZone" ],
+          "action":
+                [ "epicclient.py" ],
+          "target":
+                [ "*" ]
+        }
 }

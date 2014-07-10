@@ -87,8 +87,8 @@ class AuthZClient(object):
                 i = i + 1
                 if self.debug:
                        print "matched action assertion (%s %s %s %s)" % (username, action, target, credential)
-                if i == 2:
-                    return True
+            if i == 2:
+                return True
 
         return False
 
@@ -188,7 +188,7 @@ if __name__ == "__main__":
                                               '(user#zone)')
     parser_read.add_argument("action", help="the action value")
     parser_read.add_argument("target", help="the target value")
-    parser_read.add_argument("credential", help="the Credential value")
+    parser_read.add_argument("credential", help="Path to credential file")
     parser_read.set_defaults(func=check)
 
     parser_test = subparsers.add_parser('test', help='Run test suite')

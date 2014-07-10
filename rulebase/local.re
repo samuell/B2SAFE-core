@@ -10,7 +10,8 @@ getEpicApiParameters(*credStoreType, *credStorePath, *epicApi, *serverID, *epicD
     *epicApi="http://hdl.handle.net/";
     *serverID="irods://<hostnameWithFullDomain>:1247"; 
     *epicDebug=2; 
-
+ 
+ # comment it because of some changes in authZ.manager.py
  #   EUDATAuthZ("$userNameClient#$rodsZoneClient", "read", *credStorePath, *response);
 }
 
