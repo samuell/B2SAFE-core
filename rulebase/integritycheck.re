@@ -5,7 +5,7 @@
 # 	*srcColl	[IN]	Path of transfered Collection
 #	*destColl	[IN]	Path of replicated Collection
 #
-# Author: Long Phan, Jülich
+# Author: Long Phan, JSC
 #
 EUDATIntegrityCheck(*srcColl,*destColl) {
         # Verify that input path is a collection
@@ -51,7 +51,7 @@ EUDATIntegrityCheck(*srcColl,*destColl) {
 # Parameter:
 # 	*path	[IN]	Path of Data in iRODS
 #
-# Author: Long Phan, Jülich
+# Author: Long Phan, JSC
 #
 EUDATVerifyData(*path) {
     logInfo("Verify that source input path *path is a Data")
@@ -69,7 +69,7 @@ EUDATVerifyData(*path) {
 # Parameter:
 #       *path   [IN]    Path of Data Object in iRODS
 #
-# Author: Long Phan, Jülich
+# Author: Long Phan, JSC
 #
 EUDATVerifyExistence(*path) {
     *b = bool("true");
@@ -92,7 +92,7 @@ EUDATVerifyExistence(*path) {
 # Parameter:
 # 	*srcColl	[IN]	Path of Collection
 #
-# Author: Long Phan, Jülich
+# Author: Long Phan, JSC
 #
 EUDATVerifyCollection(*srcColl) {
     logInfo("Verify that source input path *srcColl is a collection")
@@ -112,7 +112,7 @@ EUDATVerifyCollection(*srcColl) {
 #	*srcColl	[IN]	Path of transfered Collection
 #	*destColl	[IN]	Path of replicated Collection
 #
-# Author: Long Phan, Jülich
+# Author: Long Phan, JSC
 #
 EUDATTransfer(*srcColl,*destColl,*targetResc) {
         EUDATVerifyCollection(*srcColl);
@@ -133,7 +133,7 @@ EUDATTransfer(*srcColl,*destColl,*targetResc) {
 # Step 1: applying msiCollRsync to transfer Collection
 # Step 2: create/ update PID 
 #
-# Author: Long Phan, Jülich
+# Author: Long Phan, JSC
 #
 EUDATTransferColl(*srcColl,*destColl,*transfer,*targetResc){
 
