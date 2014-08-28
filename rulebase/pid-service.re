@@ -48,7 +48,9 @@
 #   *newPID     [OUT]   the pid generated for this replica 
 #
 # Author: Willem Elbers, MPI-TLA
-# Edited by Elena Erastova, RZG
+# Edited by Elena Erastova, RZG; Long Phan, JSC
+#
+# TODO: NEED TESTING
 #
 EUDATCreatePID(*parent_pid, *path, *ror, *iCATCache, *newPID) {
     logInfo("create pid for *path and save *ror as ror");
@@ -74,36 +76,59 @@ EUDATCreatePID(*parent_pid, *path, *ror, *iCATCache, *newPID) {
     }
 
     # add RoR to PID record if there is one defined
-    if(*ror != "None") {
-        *listRor = split(*ror, "/");
-        *firstRor = elem(*listRor,0);
-        if(*firstRor != "http:") {
-            *ror = "*epicApi*ror";
-        }
-    }
-    if(*parent_pid != "None") {
-        *listPpid = split(*parent_pid, "/");
-        *firstPpid = elem(*listPpid,0);
-        if(*firstPpid != "http:") {
-            *parent_pid = "*epicApi*parent_pid";
-        }
-        if(*ror == "None") {
-            *ror = *parent_pid;
-            *parent_pid = "None";   
-        }
-        else if(*ror == *parent_pid) {
-            *parent_pid = "None";
-        }
-    }
+#    if(*ror != "None") {
+#        *listRor = split(*ror, "/");
+#        *firstRor = elem(*listRor,0);
+#       if(*firstRor != "http:") {
+#            *ror = "*epicApi*ror";
+#        }
+#    }
+#    if(*parent_pid != "None") {
+#        *listPpid = split(*parent_pid, "/");
+#        *firstPpid = elem(*listPpid,0);
+#        if(*firstPpid != "http:") {
+#            *parent_pid = "*epicApi*parent_pid";
+#        }
+#        if(*ror == "None") {
+#            *ror = *parent_pid;
+#            *parent_pid = "None";   
+#        }
+#        else if(*ror == *parent_pid) {
+#            *parent_pid = "None";
+#        }
+#    }
 
-    if(*ror != "None") {
-        # add ROR to PID record
-        EUDATeParentUpdate(*newPID, "ROR", *ror);
-    }
-    if(*parent_pid != "None") {
-        # add PPID to PID record
-        EUDATeParentUpdate(*newPID, "PPID", *parent_pid);
-    }
+#    if(*ror != "None") {
+#        # add ROR to PID record
+#        EUDATeParentUpdate(*newPID, "ROR", *ror);
+#    }
+#    if(*parent_pid != "None") {
+#        # add PPID to PID record
+#        EUDATeParentUpdate(*newPID, "PPID", *parent_pid);
+#    }
+     
+     if (*ror != "None" && *ror != "" && *parent_pid != "None" && *parent_pid != "") {
+                logInfo("Update Parent PID with fields ROR and PPID");
+
+                EUDATeParentUpdate(*newPID, "ROR", *ror);
+                EUDATeParentUpdate(*newPID, "PPID", *parent_pid);
+
+     } else if ((*ror != "None" && *ror != "" && *parent_pid == "None") ||
+                (*ror != "None" && *ror != "" && *parent_pid == "")) {
+
+                logInfo("Update ParentPID with field ROR");
+                EUDATeParentUpdate(*newPID, "ROR", *ror);
+
+     } else if ((*parent_pid != "None" && *parent_pid != "" && *ror == "None") ||
+                (*parent_pid != "None" && *parent_pid != "" && *ror == "")) {
+
+                logInfo("Update ParentPID = *parent_pid with field PPID");
+                EUDATeParentUpdate(*newPID, "PPID", *parent_pid);
+
+     } else {
+                logInfo("field ROR and PPID are empty or invalid, No ParentUpdate");
+     }
+
 }
 
 #
@@ -122,7 +147,9 @@ EUDATSearchPID(*path, *existing_pid) {
     msiExecCmd("epicclient.py","*credStoreType *credStorePath replaceHash *path", 
                "null", "null", "null", *out1);
     msiGetStdoutInExecCmdOut(*out1, *path1);
+    logInfo("path = *path1, with serverID = *serverID");	
     *status = EUDATePIDsearch("URL", "*serverID"++"*path1", *existing_pid);
+    logInfo("existing_pid = *existing_pid, with status = *status");	
     *status;
 }
 
@@ -340,8 +367,9 @@ EUDATePIDsearch(*field, *value, *PID) {
     getEpicApiParameters(*credStoreType, *credStorePath, *epicApi, *serverID, *epicDebug);
     *status0 = bool("true");
     msiExecCmd("epicclient.py","*credStoreType *credStorePath search *field *value", "null", "null", "null", *out);
-    msiGetStdoutInExecCmdOut(*out, *PID);
-    logInfo("EUDATePIDsearch -> search handle response = *PID");
+    msiGetStdoutInExecCmdOut(*out, *PID);    
+    logInfo("EUDATePIDsearch -> search handle response = ------ *PID ----------- ");
+    logInfo("------------------------------------------------------------------- ");
     if ( str(*PID) == "empty" ) { 
         *status0=bool("false"); 
         logInfo("EUDATePIDsearch -> search handle response = no PID");
@@ -510,6 +538,172 @@ EUDATeParentUpdate(*PID, *PFName, *PFValue) {
     if(*epicDebug > 1) {
         logDebug("modify handle response = *response")
     }
+}
+
+###############################################################################
+# Remote operations on different scripts of B2Safe 
+# (epicclient, authorization, logging)
+#
+###############################################################################
+
+#
+# Execute remote-action to  epicclient.script at destination Host
+#   
+# Parameters:
+#   *srchost    [IN]    address of source host
+#   *desthost   [IN]    address of destination host
+#   *message    [IN]    message for field URL of PID
+#   *out        [OUT]   pid
+#
+# Author: Long Phan, JSC
+#
+EUDATcreatePIDremote(*srchost, *desthost, *message) {
+    remote(*desthost, "null") {
+        logInfo(".... Accessing to remote-script epicclient at *desthost from *srchost, create pid with '*message' ");
+        getEpicApiParameters(*credStoreType, *credStorePath, *epicApi, *serverID, *epicDebug);
+        if (errorcode(msiExecCmd("epicclient.py", "*credStoreType *credStorePath create '*message'", "null","null","null",*out)) >= 0) {
+            msiGetStdoutInExecCmdOut(*out, *result);
+            remote(*srchost, "null") {
+                logInfo(" Result: *result");
+            }
+        } else {
+            remote(*srchost, "null") {
+                logInfo(" Error, no PID is created ....");          
+            }
+        } 
+    }
+}
+
+EUDATsearchPIDremote(*srchost, *desthost, *field, *value) {
+    remote(*desthost, "null") {
+        logInfo(".... Accessing to remote-script epicclient at *desthost from *srchost, search pid with *field and *value ");
+        getEpicApiParameters(*credStoreType, *credStorePath, *epicApi, *serverID, *epicDebug);
+        if (errorcode(msiExecCmd("epicclient.py", "*credStoreType *credStorePath search '*field' '*value'", "null", "null", "null",*out)) >= 0) {
+            msiGetStdoutInExecCmdOut(*out, *result);
+            remote(*srchost, "null") {
+                logInfo(" Result: *result");
+            }
+        } else {
+            remote(*srchost, "null") {
+                logInfo(" Error, no PID is found ....");
+            }
+        }
+    }
+}
+
+EUDATdeletePIDremote(*srchost, *desthost, *pid, *field) {
+    remote(*desthost, "null") {
+        logInfo(".... Accessing to remote-script epicclient at *desthost from *srchost, delete pid *field ");
+        getEpicApiParameters(*credStoreType, *credStorePath, *epicApi, *serverID, *epicDebug);
+        if (errorcode(msiExecCmd("epicclient.py", "*credStoreType *credStorePath delete *pid '*field'", "null", "null", "null", *out)) >= 0) {
+            msiGetStdoutInExecCmdOut(*out, *result);
+            remote(*srchost, "null") {
+                logInfo(" Result: *result");
+            }
+        } else {
+            remote(*srchost, "null") {
+                logInfo(" Error, no PID is deleted ....");
+            }
+        }
+    }
+}
+
+#
+# Execute remote-action to Authorization-manager.script at destination Host
+#   
+# Parameters:
+#   *srchost    [IN]    address of source host
+#   *desthost   [IN]    address of destination host
+#   *user       [IN]    irods-user want to be checked
+#   *action     [IN]    the action want to be checked (ex. name of remote-script)
+#   *target     [IN]    the target want to be checked (ex '* create *')
+#
+# Author: Long Phan, JSC
+#
+EUDATAuthZremote(*srchost, *desthost, *user, *action, *target) {
+    remote(*desthost, "null") {
+        logInfo(".... Accessing to remote-script Authorization-manager at *desthost from *srchost, check authorization of *user with *action to *target");
+        getAuthZParameters(*authZMapPath);
+        getEpicApiParameters(*credStoreType, *credStorePath, *epicApi, *serverID, *epicDebug);
+        logInfo(" ....... *authZMapPath and *credStorePath ...... ");
+
+       if (errorcode(msiExecCmd("authZ.manager.py", "*authZMapPath check *user '*action' '*target' '*credStorePath'", "null", "null", "null", *out)) >= 0) {
+            msiGetStdoutInExecCmdOut(*out, *result);
+            remote(*srchost, "null") {
+                logInfo(" Result: *result");
+            }
+        } else {
+            remote(*srchost, "null") {
+                logInfo(" Error! Cannot execute remote script authZmanager.py or user is not identified");
+            }
+        }
+    }
+}
+
+#
+# Execute remote-action (queuesize) to logging.manager.script at destination Host
+# Function can be extended to other actions (log, push, pop)
+#   
+# Parameters:
+#   *srchost    [IN]    address of source host
+#   *desthost   [IN]    address of destination host
+#   *action     [IN]    the action want to be checked (ex. queuesize)
+#
+# Author: Long Phan, JSC
+#
+EUDATloggingremote(*srchost, *desthost, *action) {
+    remote(*desthost, "null") {
+        logInfo(".... Accessing to remote-script logmanager.py at *desthost from *srchost, execute logging with *action  ");
+        getLogParameters(*logConfPath);
+        if (errorcode(msiExecCmd("log.manager.py", "*logConfPath *action", "null", "null", "null", *out)) >= 0) {
+            msiGetStdoutInExecCmdOut(*out, *result);
+            remote(*srchost, "null") {
+                logInfo(" Result: *result");
+            }
+        } else {
+            remote(*srchost, "null") {
+                logInfo(" Error! Cannot execute remote script logmanager.py or user is not identified");
+            }
+        }
+    }
+}
+
+#
+# DEMO FUNCTION: 
+#       Create CPID and update PPID using remote-structure
+# Parameters:
+#   *srchost    [IN]    source host 
+#   *desthost   [IN]    remote host
+#   *ppid       [IN]    Parent-PID at source host which will be updated
+#
+EUDATdemoPIDremote(*srchost, *desthost, *ppid, *cpiddata) {
+    logInfo("------- Begin DEMO create CPID at DESTINATION_HOST *desthost, update PPID *ppid at *srchost");
+    remote(*desthost, "null") {        
+        logInfo(".... Accessing to remote-script epicclient at DESTINATION_HOST *desthost, create pid with '*cpiddata' ");
+        getEpicApiParameters(*credStoreType, *credStorePath, *epicApi, *serverID, *epicDebug);
+        if (errorcode(msiExecCmd("epicclient.py", "*credStoreType *credStorePath create '*cpiddata'", "null","null","null",*out)) >= 0) {
+            msiGetStdoutInExecCmdOut(*out, *cpid); 
+            # improve with logging-script at *desthost           
+            logInfo(" Result: *cpid");
+            # msiSleep("10","20");
+            remote(*srchost, "null") {
+                getEpicApiParameters(*credStoreType, *credStorePath, *epicApi, *serverID, *epicDebug);
+                if (errorcode(msiExecCmd("epicclient.py", "*credStoreType *credStorePath relation *ppid *epicApi*cpid", "null", "null", "null", *out)) >= 0) {
+                    msiGetStdoutInExecCmdOut(*out, *response);
+                    # improve with logging-script at *srchost
+                    logInfo("Update PPID at SOURCE_HOST *srchost : *response");
+                } else {
+                    # improve with logging-script at *srchost
+                    logInfo("Update PPID at SOURCE_HOST *srchost failed ...");
+                }
+            }
+        } else {
+            # improve with logging-script at *desthost
+            logInfo(" Error, no PID is created at *desthost. So, Update PPID failed at *srchost ....");
+        }
+        
+    }
+
 }
 
 ################################################################################

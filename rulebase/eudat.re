@@ -61,9 +61,10 @@
 #
 EUDATAuthZ(*user, *action, *target, *response) {
     getAuthZParameters(*authZMapPath);
+    getEpicApiParameters(*credStoreType, *credStorePath, *epicApi, *serverID, *epicDebug);
     logDebug("checking authorization for *user to perform: *action *target");
-    msiExecCmd("authZ.manager.py", "*authZMapPath check *user '*action' '*target'",
-               "null", "null", "null", *out);
+    msiExecCmd("authZ.manager.py", "*authZMapPath check *user '*action' '*target' '*credStorePath'", "null", "null", "null", *out);
+#    msiExecCmd("authZ.manager.py", "*authZMapPath check *user '*action' '*target' ","null", "null","null", *out);             
     msiGetStdoutInExecCmdOut(*out, *response);
     if (*response == "False") {
         # here should be placed specific authorization rules 
@@ -371,6 +372,27 @@ getCollectionName(*path_of_collection,*Collection_Name){
     *s = size(*list) - 1;
     *n = elem(*list,*s);
     *Collection_Name = "*n";
+}
+
+#
+# get Host Address
+#
+# Parameters:
+#   *path       [IN]    irods-Path
+#   *address    [OUT]   return Address of Host
+#
+# Author: Long Phan, JSC
+#
+getHostAddress(*path, *address) {
+    *list  = split("*path","/");
+    *zonename    = elem(*list,0);
+    # Query iCAT to get Host-Address
+    *d = SELECT ZONE_CONNECTION WHERE ZONE_NAME = '*zonename';
+    foreach(*c in *d) {
+        msiGetValByKey(*c, "ZONE_CONNECTION", *value);
+    }    
+
+    *address = *value;
 }
 
 ################################################################################
